@@ -1,0 +1,10 @@
+* randSynth
+randSynth downloads random audio samples from youtube videos and uses them with
+supercollider.
+
+place this in ~/.
+
+** random api
+your will need a token to use https://randomyoutube.net.
+to get that token make an account here https://randomyoutube.net/api and replace
+in the python script.

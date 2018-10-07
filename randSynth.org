@@ -1,0 +1,174 @@
+* random samples
+** set python interpreter used to python2
+#+BEGIN_SRC emacs-lisp
+  ;; python 3
+  (setq python-shell-interpreter "/usr/bin/python")
+  ;; python 2
+  (setq python-shell-interpreter "/usr/bin/python2")
+#+END_SRC
+** getting the samples
+#+BEGIN_SRC python
+  from __future__ import unicode_literals
+  import request
+  import requests
+  import subprocess
+  import json
+  import OSC
+  import csv
+  import datetime
+  import time, random
+  import threading
+  import shutil
+
+  counter = 0
+  t2n = 60;
+  vidIDlist = [];
+  client = OSC.OSCClient()
+  client.connect( ( '127.0.0.1', 57120 ) )
+  msg = OSC.OSCMessage()
+  msg.setAddress("/newsample")
+  msg.append(45)
+
+  url = "https://randomyoutube.net/api/getvid?api_token=insertyourtokenhere"
+
+  def handler(addr, tags, data, client_address):
+      txt = "OSCMessage '%s' from %s: " % (addr, client_address)
+      txt += str(data)
+      if data[0] == 'saveSamplePlz':
+          lastRow = open('idList.csv', 'r').readlines()[-1]
+          shutil.copyfile('abc.wav','selected/'+lastRow+'.wav')
+      # elif data[0] == 't2n':
+      #     t2n = data[1]
+      print(txt)
+
+  def audioReq():
+      vidIDlist = []
+      r = requests.get(url)
+      vidResp = json.loads(r.content)
+      print (vidResp['vid'])
+      vidIDlist.append(datetime.datetime.now())
+      vidIDlist.append(vidResp['vid'])
+      with open('idList.csv', 'a') as f:
+          writer = csv.writer(f)
+          writer.writerow(vidIDlist)
+          ytUrl = 'https://www.youtube.com/watch?v='+ vidResp['vid']
+          print(ytUrl)
+          audioStr0 = 'youtube-dl --get-duration '+ ytUrl
+          process = subprocess.Popen(audioStr0.split(), stdout=subprocess.PIPE)
+          output, error = process.communicate()
+          durArr = output.split(':')
+          print(len(durArr))
+          audioStr = 'youtube-dl -f bestaudio[ext=m4a] -g '+ ytUrl
+          process = subprocess.Popen(audioStr.split(), stdout=subprocess.PIPE)
+          output, error = process.communicate()
+          audioStream = output[:-1]
+          print(audioStream)
+      if len(durArr) == 1:
+          downBash = 'ffmpeg -i \''+ audioStream +'\' -ac 1 -f wav ~/randSynth/abc.wav -y'
+          process2 = subprocess.call(downBash, stdout=subprocess.PIPE, shell=True)
+          # output2, error2 = process.communicate()
+          # print(output2)
+          print(downBash)
+      else:
+          downBash = 'ffmpeg -i \''+ audioStream +'\' -ss 00:00:00 -t 00:01:00 -ac 1 -f wav ~/randSynth/abc.wav -y'
+          process2 = subprocess.call(downBash, stdout=subprocess.PIPE, shell=True)
+          # output2, error2 = process.communicate()
+          # print(output2)
+          print(downBash)
+
+  def downLoop():
+      while True:
+          global counter
+          global t2n
+          counter += 1
+          print("counter", counter)
+          audioReq()
+          client.send(msg)
+          time.sleep(t2n)
+  def saveSample():
+          s = OSC.OSCServer(('127.0.0.1', 50010))  # listen on localhost, port 57120
+          s.addMsgHandler('/newsample', handler)     # call handler() for OSC messages received with the /startup address
+          s.serve_forever()
+  thread1 = threading.Thread(target=downLoop)
+  thread1.start()
+
+  thread2 = threading.Thread(target=saveSample)
+  thread2.start()
+
+#+END_SRC
+* sound
+#+BEGIN_SRC sclang
+  s.boot;
+  MIDIClient.init;
+  MIDIIn.connectAll;
+  n = NetAddr("127.0.0.1", 50010);
+  // TempoClock.default.tempo = 80/60;
+  (
+  ~newSample ={
+          j.free;
+          k.free;
+  b = Buffer.read(s, Platform.userHomeDir +/+ "randSynth/abc.wav");
+  c = Buffer.sendCollection(s, Env.sine(dur: 0.01).discretize);
+  SynthDef(\grain, {| amp = 0.5, trigFreq = 100, graindur = 0.1, rate = 1, filepos = 0.5, pan = 0, envbuf = -1 |
+          var src;
+          src = GrainBuf.ar(2, Impulse.ar(trigFreq), graindur, b.bufnum, rate, filepos, 2, pan, envbuf);
+          Out.ar(0, src * amp);
+  }).add;
+  j = Synth(\grain);
+  k = Synth(\grain,[\amp, 0]);
+  }
+  )
+  (
+  OSCdef.new(\reciever,{| msg, time, addr, port|
+          ~newSample.value;
+          "new sample".postln;
+  },'/newsample');
+  )
+  // next sample
+  // n.sendMsg("/newsample", "t2n", "20");
+  s.record;
+  s.stopRecording;
+  // save sample
+  n.sendMsg("/newsample", "saveSamplePlz");
+  // akai lpd8
+  (
+  MIDIdef.cc(\noteOnTest, {
+          arg vel, nn, chan, src;
+          [vel, nn, chan, src].postln;
+          if(chan == 0,{
+                  if(nn == 1,{
+                          j.set(\filepos, LinLin.kr(vel,1,127,0,1));
+                  });
+                  if(nn == 2,{
+                          j.set(\rate,LinLin.kr(vel,1,127,0,2));
+                  });
+                  if(nn == 3,{
+                          j.set(\graindur, LinLin.kr(vel,1,127,0,0.5));
+                  });
+                  if(nn == 4,{
+                          j.set(\trigFreq, LinLin.kr(vel,1,127,1,500));
+                  });
+                  if(nn == 8,{
+                          j.set(\amp, LinLin.kr(vel, 1, 127, 0, 0.9));
+                  });
+          });
+          if(chan == 2,{
+                  if(nn == 1,{
+                          k.set(\filepos, LinLin.kr(vel,1,127,0,1));
+                  });
+                  if(nn == 2,{
+                          k.set(\rate,LinLin.kr(vel,1,127,0,2));
+                  });
+                  if(nn == 3,{
+                          k.set(\graindur, LinLin.kr(vel,1,127,0,0.5));
+                  });
+                  if(nn == 4,{
+                          k.set(\trigFreq, LinLin.kr(vel,1,127,1,500));
+                  });
+                  if(nn == 8,{
+                          k.set(\amp, LinLin.kr(vel, 1, 127, 0, 0.9));
+                  });
+          });
+  });
+  )
+#+END_SRC
