@@ -119,8 +119,8 @@
           Out.ar(0, src * amp);
           }).add;
           j = Synth(\grain);
-          k = Synth(\grain,[\amp, 0]);
-          l = Synth(\grain2, [\amp, 0]);
+          // k = Synth(\grain,[\amp, 0]);
+          // l = Synth(\grain2, [\amp, 0]);
   }
   )
   (

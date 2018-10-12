@@ -8,3 +8,6 @@ place this in ~/.
 your will need a token to use https://randomyoutube.net.
 to get that token make an account here https://randomyoutube.net/api and replace
 in the python script.
+** dependencies
+- [ ] youtube-dl
+- [ ] ffmpeg
