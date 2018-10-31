@@ -1,12 +1,12 @@
 * random samples
-** set python interpreter used to python2
+** COMMENT set python interpreter used to python2
 #+BEGIN_SRC emacs-lisp
 ;; python 3
 (setq python-shell-interpreter "/usr/bin/python")
 ;; python 2
 (setq python-shell-interpreter "/usr/bin/python2")
 #+END_SRC
-** getting the samples
+** COMMENT getting the samples
 #+BEGIN_SRC python
   from __future__ import unicode_literals
   import request
@@ -21,7 +21,7 @@
   import shutil
 
   counter = 0
-  t2n = 60;
+  t2n = 300;
   vidIDlist = [];
   client = OSC.OSCClient()
   client.connect( ( '127.0.0.1', 57120 ) )
@@ -102,7 +102,7 @@
   MIDIIn.connectAll;
   n = NetAddr("127.0.0.1", 50010);
   // TempoClock.default.tempo = 80/60;
-  (
+  (;
   ~newSample ={
           j.free;
           k.free;
@@ -119,8 +119,8 @@
           Out.ar(0, src * amp);
           }).add;
           j = Synth(\grain);
-          k = Synth(\grain,[\amp, 0]);
-          l = Synth(\grain2, [\amp, 0]);
+          // k = Synth(\grain,[\amp, 0]);
+          // l = Synth(\grain2, [\amp, 0]);
   }
   )
   (
@@ -207,14 +207,12 @@
                   // 3.wait;
           "recording".postln;
           x = Synth(\rec, [\in, 0], j, \addAfter);
-          10.wait;
+          120.wait;
           "playing".postln;
           y = Synth(\play);
           });
   }
   )
   s.plotTree;
-  (
-  SynthDef()
-  )
+
 #+END_SRC
